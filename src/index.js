@@ -9,24 +9,36 @@ const getCommand = (contribution) => {
     contribution.count
   );
 };
+
 export default async (input) => {
   // Returns contribution graph html for a full selected year.
   const res = await axios.get(
-    `https://github.com/users/${input.username}/contributions?tab=overview&from=${input.year}-12-01&to=${input.year}-12-31`
+    `https://github.com/${input.username}?tab=overview&from=${input.year}-12-01&to=${input.year}-12-31`
   );
+
   // Retrieves needed data from the html, loops over green squares with 1+ contributions,
   // and produces a multi-line string that can be run as a bash command.
-  const elements = parse(res.data)
-    .querySelectorAll("td.ContributionCalendar-day");
+  const document = parse(res.data);
+
+  // The actual data is now stored in tooltips that are attached to the contribution squares through the virtual dom.
+  // Therefore we have to query for the tooltips and then get the data from the corresponding contribution square.
+  const elements = document.querySelectorAll("tool-tip[for^=contribution-day-component]");
 
   const days = elements.map((el) => {
-    const innerContent = el.firstChild.innerText;
-    const numContributions = innerContent.split(innerContent.includes('contributions' ? ' contributions' : ' contribution'))?.[0];
+    const innerContent = el?.innerText;
+    if (!innerContent) return;
+    const numContributions = innerContent.split(innerContent.includes('contributions') ? ' contributions' : ' contribution')?.[0];
+
+    // Find the matching contribution square and get the date from it.
+    const pairElement = document.getElementById(el?.getAttribute("for"));
+    const date = pairElement?.getAttribute("data-date");
+
     return {
-      date: el.getAttribute("data-date"),
+      date,
       count: isNaN(parseInt(numContributions)) ? 0 : parseInt(numContributions),
     };
   });
+  
   const filteredDays = days.filter((contribution) => contribution.count > 0);
 
   const script = filteredDays.map((contribution) => getCommand(contribution))

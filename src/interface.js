@@ -30,11 +30,11 @@ const questions = [
     name: "execute",
     choices: [
       {
-        name: `Generate a bash script & execute it immediately.\n  Note: it *will* push to origin main and it would be difficult to undo.`,
+        name: "Only generate, no execution. Run script.sh after to execute.",
         value: true,
       },
       {
-        name: "Only generate, no execution.",
+        name: `Generate a bash script & execute it immediately.\n  Note: it *will* push to origin main and it would be difficult to undo.`,
         value: false,
       },
     ],
